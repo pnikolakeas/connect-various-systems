@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="foodNSavings" doc:id="1bf0e897-9e60-44da-a5b9-b0f4d2d03131" >
+		<jms:listener doc:name="JMS: queue partner1" doc:id="5a86f043-40fd-4542-87b5-216c28a6781c" config-ref="JMS_Config" destination="${partner1.queue}">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+			<jms:response >
+				<jms:properties ><![CDATA[#[ {
+	"jmsStatusMessage": vars.jmsStatusMessage
+}]]]></jms:properties>
+			</jms:response>
+		</jms:listener>
+		<db:bulk-insert doc:name="Database" doc:id="08a21e8f-890b-4a5e-90a8-c18d9e840101" config-ref="Partner1_Database_Configuration">
+			<db:sql >INSERT INTO Giftcards (number, sourceID, balance, createdOn) VALUES
+(:number, :sourceID, :balance, :createdOn)</db:sql>
+		</db:bulk-insert>
+		<set-variable value="SUCCESS" doc:name="Set success status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="bbc78aa1-a691-4d6d-bfac-40fa4fbb97b2" type="ANY">
+				<set-variable value="#['ERROR OCCURRED WHILE PROCESSING:' ++ error.description]" doc:name="Set error status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

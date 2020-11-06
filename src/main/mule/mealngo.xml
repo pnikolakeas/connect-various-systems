@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd">
+	<flow name="mealInGo" doc:id="980f7f47-e6e9-493e-a9ca-2946d7082d2c" >
+		<jms:listener doc:name="JMS: queue partner2" doc:id="98193b15-3e41-4da2-898e-dcb345bf657f" config-ref="JMS_Config" destination="${partner2.queue}">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+			<jms:response >
+				<jms:properties ><![CDATA[#[{
+	   "jmsStatusMessage": vars.jmsStatusMessage
+    }]]]></jms:properties>
+			</jms:response>
+		</jms:listener>
+		<ftp:write doc:name="FTP" doc:id="bf44d5d6-0a06-4704-bed8-6c425d2a797f" config-ref="Partner2_FTP_Config" path="#['MULEBANK-gc-' ++ attributes.properties.userProperties.creationDateUnixEpoch ++ '.csv']">
+			<ftp:content ><![CDATA[#[output application/csv --- payload]]]></ftp:content>
+		</ftp:write>
+		<set-variable value="SUCCESS" doc:name="Set success status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="04f376ca-b33e-44b4-a57a-79bd2f87c118" type="ANY" >
+				<set-variable value="#['ERROR OCCURRED WHILE PROCESSING:' ++ error.description]" doc:name="Set error status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

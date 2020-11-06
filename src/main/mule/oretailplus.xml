@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<flow name="oRetailPlus" doc:id="0789aab5-3b72-4e63-bd91-a9cdfa50300f" >
+		<jms:listener doc:name="JMS: queue partner3" doc:id="37d5c2f6-9343-4ddc-a43d-d2cbd41d5296" config-ref="JMS_Config" destination="${partner3.queue}" >
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+			<jms:response >
+				<jms:properties ><![CDATA[#[{
+	   "jmsStatusMessage": vars.jmsStatusMessage
+    }]]]></jms:properties>
+			</jms:response>
+		</jms:listener>
+		<set-variable value="#[sizeOf(payload)]" doc:name="recordCount" doc:id="acc5d473-9022-43a5-9b74-d0d1b76b046b" variableName="recordCount"/>
+		<file:write doc:name="File" doc:id="2efff15d-4c9a-47b1-b2c7-10cf05f23090" path="#[ p('partner3.fileWrite') ++ '/MULEBANK-$(now() as Number)-$(vars.recordCount).csv']">
+			<file:content ><![CDATA[#[output application/csv --- payload]]]></file:content>
+		</file:write>
+		<set-variable value="SUCCESS" doc:name="Set success status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="0ec73226-b020-4c7b-820d-044fb16e91c5" type="ANY" >
+				<set-variable value="#['ERROR OCCURRED WHILE PROCESSING:' ++ error.description]" doc:name="Set error status" doc:id="9ae43a73-7b4c-4498-8aa0-280abe4e7054" variableName="jmsStatusMessage" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
